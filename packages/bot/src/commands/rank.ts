@@ -82,7 +82,7 @@ export async function execute(interaction: Interaction) {
 	const tclvlStr = `${userLvl.mexp} / ${lvlCalc.getlevelMultiplier(userLvl.mlvl)}`;
 
 	let description = `# VCレベル: ${userLvl.vclvl}\n`;
-	description += `${vclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userLvl.vclvl, userLvl.vcexp)}秒接続\n\n`;
+	description += `${vclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userLvl.vclvl, userLvl.vcexp) * 10}秒接続\n\n`;
 
 	description += `# TCレベル: ${userLvl.mlvl}\n`;
 	description += `${tclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userLvl.mlvl, userLvl.mexp)}回送信\n\n`;
