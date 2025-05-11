@@ -1,0 +1,23 @@
+{
+	"name": "@rankbot/bot",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.ts",
+	"type": "module",
+	"scripts": {
+		"botlogin": "tsx src/main.ts",
+		"build": "tsc -p ./tsconfig.build.json",
+		"type-check": "biome check --config-path ../.."
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.9.0",
+	"dependencies": {
+		"@rankbot/db": "workspace:*",
+		"@rankbot/redis": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.11.14"
+	}
+}

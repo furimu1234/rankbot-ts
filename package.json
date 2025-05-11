@@ -1,0 +1,42 @@
+{
+	"name": "rankbot",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.ts",
+	"scripts": {
+		"botlogin": "pnpm --filter bot run botlogin",
+		"drizzle": "pnpm --filter db run drizzle",
+		"generate": "pnpm --filter db run localGenerate && pnpm --filter db run migrate",
+		"docker_clean": "docker compose down --remove-orphans && docker volume prune -af",
+		"db": "pnpm --filter db run studio",
+		"cleanVolume": "pnpm --filter db cleanVolume",
+		"dockerReStart": "pnpm --filter db dockerReStart",
+		"type-check": "tsc --noEmit && pnpm --filter @rankbot/* type-check"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.9.0",
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^20.17.32",
+		"dotenv-cli": "^8.0.0",
+		"tsx": "^4.0.0",
+		"typescript": "^5.4.0"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"dependencies": {
+		"@rankbot/lib": "workspace:*",
+		"discord.js": "^14.19.2",
+		"dotenv": "^16.5.0",
+		"drizzle-kit": "^0.31.0",
+		"drizzle-orm": "^0.43.1",
+		"fs": "0.0.1-security",
+		"ioredis": "^5.6.1",
+		"pg": "^8.15.6",
+		"pino": "^9.6.0",
+		"pino-pretty": "^13.0.0"
+	}
+}

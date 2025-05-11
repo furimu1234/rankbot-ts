@@ -1,0 +1,29 @@
+{
+	"name": "@rankbot/db",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/index.ts",
+	"type": "module",
+	"scripts": {
+		"localGenerate": "dotenv -e ../../.env -- drizzle-kit generate",
+		"migrate": "dotenv -e ../../.env -- drizzle-kit migrate",
+		"drizzle": "dotenv -e ../../.env -- drizzle-kit",
+		"studio": "dotenv -e ../../.env -- drizzle-kit studio",
+		"cleanVolume": "sh scripts/cleanVolume.sh",
+		"dockerStart": "sh scripts/dockerStart.sh",
+		"dockerReStart": "sh scripts/dockerReStart.sh",
+		"type-check": "biome check --config-path ../.."
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.9.0",
+	"dependencies": {
+		"drizzle-kit": "^0.31.0",
+		"drizzle-orm": "^0.43.1",
+		"pg": "^8.15.6"
+	},
+	"devDependencies": {
+		"tsc-alias": "^1.8.15"
+	}
+}

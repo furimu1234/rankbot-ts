@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+redis.conf
+.env
+node_modules/
+.vscode/
+clientCount/
+drizzle/

@@ -1,0 +1,16 @@
+{
+	"name": "@rankbot/lib",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/index.js",
+	"type": "module",
+	"scripts": {
+		"build": "tsc -p ../tsconfig.build.json",
+		"type-check": "biome check --config-path ../.."
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.9.0",
+	"dependencies": {}
+}
