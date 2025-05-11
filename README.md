@@ -4,6 +4,11 @@
 dockerとcomposeがインストールされてること
 ```
 
+0. 環境変数設定
+```
+mv .env.example .env
+```
+
 1. NVMのインストール
 ```
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
