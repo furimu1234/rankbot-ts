@@ -7,7 +7,6 @@ import { ENV } from './env';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadCommands } from './commands/main';
-import { slashCommandRegister } from './commands/utis/register';
 import { setLastRunningTime } from './intervals';
 import { loadEvents } from './loadEvents';
 import { initExp } from './utils';
@@ -37,7 +36,7 @@ client.once(Events.ClientReady, async () => {
 		logger.info('=============BOT START=============');
 		logger.info(client.user?.displayName);
 		const commands = await loadCommands();
-		await slashCommandRegister(client.user, commands);
+		//await slashCommandRegister(client.user, commands);
 
 		//再起動前からVCに入ってた場合、最後に保存された起動時間と保存されてるVC入室時間をもとにexpとレベルを計算する
 		await initExp(container, client.guilds);
