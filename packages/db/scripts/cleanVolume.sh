@@ -1,1 +1,1 @@
-docker volume rm rankbot_postgres-data
+docker volume rm rankbot-ts_postgres-data
