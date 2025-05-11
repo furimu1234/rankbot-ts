@@ -28,9 +28,7 @@ export function LevelCalc(value: UserLevelData) {
 			nowSeconds = new Date().getTime();
 		}
 
-		nowSeconds = nowSeconds / 10;
-
-		vcexp += Math.round((nowSeconds - lastJoinTimeSeconds) / 1000);
+		vcexp += Math.round((nowSeconds - lastJoinTimeSeconds) / 10 / 1000);
 
 		while (vcexp >= vclvl * BASE) {
 			vcexp -= vclvl * BASE;
