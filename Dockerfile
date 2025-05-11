@@ -15,5 +15,5 @@ RUN pnpm install
 
 
 
-RUN ["pnpm", "generate"]
+# RUN ["pnpm", "generate"]
 CMD ["pnpm", "botlogin"]
