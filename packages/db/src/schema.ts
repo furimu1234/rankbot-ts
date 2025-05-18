@@ -18,8 +18,9 @@ export const userLevel = dbSchema.table(
 		id: serial('id').primaryKey(),
 		userId: varchar('user_id', { length: 19 }).notNull(),
 		guildId: varchar('guild_id', { length: 19 }).notNull(),
-		vclvl: integer().default(1).notNull(),
-		vcexp: integer().default(1).notNull(),
+		vcTotalConnectSeconds: varchar('vc_total_connect_seconds')
+			.notNull()
+			.default('0'),
 		mlvl: integer().default(1).notNull(),
 		mexp: integer().default(1).notNull(),
 		createdAt: timestamp('created_at').defaultNow(),
@@ -28,6 +29,23 @@ export const userLevel = dbSchema.table(
 			.$onUpdate(() => new Date()),
 	},
 	(table) => [index('user_guild_idx').on(table.userId, table.guildId)],
+);
+
+export const userconnectHistory = dbSchema.table(
+	'user_connect_history',
+	{
+		id: serial('id').primaryKey(),
+		userId: varchar('user_id', { length: 19 }).notNull(),
+		guildId: varchar('guild_id', { length: 19 }).notNull(),
+		joinedTime: timestamp('joined_time').notNull(),
+		removeTime: timestamp('remove_time'),
+		resultSeconds: varchar('vc_total_connect_seconds'),
+		createdAt: timestamp('created_at').defaultNow(),
+		updatedAt: timestamp('updated_at')
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [index('history_user_guild_idx').on(table.userId, table.guildId)],
 );
 
 export const channelFilter = dbSchema.table(

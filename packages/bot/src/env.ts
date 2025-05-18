@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 // .envファイルの環境変数をロード
 dotenv.config({
 	path: '../../.env',
+	override: true,
 });
 
 function getEnvVariable(key: string): string {

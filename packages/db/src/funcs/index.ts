@@ -26,3 +26,8 @@ export * from './getLteRankRewards';
 export * from './createRankRewards';
 export * from './updateRankRewards';
 export * from './deleteRankRewards';
+
+//接続時間履歴
+export * from './getUserHistory';
+export * from './createUserHistory';
+export * from './updateUserHistory';

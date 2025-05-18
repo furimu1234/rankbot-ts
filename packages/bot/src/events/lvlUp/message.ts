@@ -62,7 +62,11 @@ export async function execute(message: Message): Promise<void> {
 			});
 		}
 		//レベル計算
-		const { mexp, mlvl } = lvlCalc(userLvl).mes();
+		const { mexp, mlvl } = lvlCalc({
+			connectSeconds: userLvl.vcTotalConnectSeconds,
+			mexp: userLvl.mexp,
+			mlvl: userLvl.mlvl,
+		}).mes();
 
 		userLvl.mexp = mexp || 0;
 		userLvl.mlvl = mlvl || 0;

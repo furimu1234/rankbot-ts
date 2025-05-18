@@ -1,42 +1,37 @@
 interface UserLevelData {
-	vclvl?: number;
-	vcexp?: number;
+	connectSeconds: string;
 	mlvl?: number;
 	mexp?: number;
 }
 
 export function LevelCalc(value: UserLevelData) {
-	const BASE = 3;
+	const BASE = 30;
 
-	let { vclvl, vcexp, mexp, mlvl } = value;
+	let { connectSeconds, mexp, mlvl } = value;
 
-	function vc_up(now: Date, latestJoinTime?: Date): UserLevelData {
-		if (!latestJoinTime) return { vclvl, vcexp };
+	function getVcLvl(): { lvl: number; exp: number; needExp: number } {
+		let connectSecondsNumber = Number.parseInt(connectSeconds);
+		let level = 1;
+		let expForNext = 30; // レベル1→2に必要な経験値
 
-		if (vclvl === undefined || vcexp === undefined) {
-			return { mlvl: 0, mexp: 0 };
+		if (connectSecondsNumber === 0)
+			return { lvl: level, exp: 0, needExp: expForNext };
+
+		// 残り経験値が次レベルに上がるための必要値を下回るまでループ
+
+		while (connectSecondsNumber >= expForNext) {
+			connectSecondsNumber -= expForNext; // 必要分消費して
+			level += 1; // レベルアップ
+			expForNext = level * 30; // 次に必要な量を「現在レベル×30」に更新
 		}
 
-		let nowSeconds = now.getTime();
-		const lastJoinTimeSeconds = latestJoinTime.getTime();
-
-		if (lastJoinTimeSeconds === 0 || !lastJoinTimeSeconds) {
-			return { vclvl, vcexp };
-		}
-
-		if (nowSeconds < lastJoinTimeSeconds) {
-			nowSeconds = new Date().getTime();
-		}
-		vcexp += Math.round((nowSeconds - lastJoinTimeSeconds) / 10 / 1000);
-
-		while (vcexp >= vclvl * BASE) {
-			vcexp -= vclvl * BASE;
-			vclvl += 1;
-		}
-
-		return { vclvl, vcexp };
+		return {
+			lvl: level,
+			exp: expForNext,
+			needExp: connectSecondsNumber,
+		};
 	}
-	function mes_up(): UserLevelData {
+	function mes_up(): { mlvl: number; mexp: number } {
 		if (mlvl === undefined || mexp === undefined) {
 			return { mlvl: 0, mexp: 0 };
 		}
@@ -65,7 +60,7 @@ export function LevelCalc(value: UserLevelData) {
 	}
 
 	return {
-		vc: vc_up,
+		vc: getVcLvl,
 		mes: mes_up,
 		getlevelMultiplier,
 		getTotalRequiredExp,

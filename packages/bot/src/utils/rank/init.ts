@@ -1,30 +1,38 @@
-import { createUserLvl, getUserLvl, updateUserLvl } from '@rankbot/db';
 import {
-	getLastRunningTime,
-	getNoSavedTimes,
-	setLatestJoinTime,
-} from '@rankbot/redis';
-import type { GuildManager } from 'discord.js';
+	createUserHistory,
+	createUserLvl,
+	getGuildHistoryies,
+	getUserHistory,
+	updateUserHistory,
+	updateUserLvl,
+} from '@rankbot/db';
+import type { GuildManager, GuildMember } from 'discord.js';
 import type { ContainerRef } from '../../types';
+import { vcLvlUp } from './lvlup';
 
 export async function initExp(container: ContainerRef, guilds: GuildManager) {
 	if (!container.current) throw new Error();
 
-	const redis = container.current.getRedisClient(true);
-
-	const LastRunningTime = await getLastRunningTime(redis);
-
 	const store = await container.current.getDataStore();
 	const lvlCalc = container.current.lvlCalc;
 
+	const processedMemberIds: string[] = [];
+
 	for (const guild of guilds.cache.values()) {
-		const noSavedTimes = await getNoSavedTimes(redis, guild.id);
-
 		await store.do(async (db) => {
-			for (const noSavedTime of noSavedTimes) {
-				if (!noSavedTime.userId) continue;
+			const noSavedTimes = await getGuildHistoryies(db, guild.id);
 
-				let userLvl = await getUserLvl(db, noSavedTime.userId, guild.id);
+			for (const noSavedTime of noSavedTimes) {
+				if (processedMemberIds.includes(noSavedTime.userId)) continue;
+
+				let userLvl = await vcLvlUp(db, lvlCalc, guild, {
+					id: noSavedTime.userId,
+				} as GuildMember);
+				const userHistory = await getUserHistory(
+					db,
+					noSavedTime.userId,
+					guild.id,
+				);
 
 				if (!userLvl) {
 					userLvl = await createUserLvl(db, {
@@ -33,25 +41,26 @@ export async function initExp(container: ContainerRef, guilds: GuildManager) {
 					});
 				}
 
-				//レベル計算
-				const { vcexp, vclvl } = lvlCalc(userLvl).vc(
-					LastRunningTime,
-					noSavedTime.time,
-				);
-
-				userLvl.vcexp = vcexp || 0;
-				userLvl.vclvl = vclvl || 0;
+				if (userHistory && userLvl) {
+					userHistory.removeTime = new Date();
+					userHistory.resultSeconds = userLvl.vcTotalConnectSeconds;
+					await updateUserHistory(db, userHistory);
+				}
 
 				await updateUserLvl(db, userLvl);
 
-				await redis.delete(noSavedTime.origKey);
+				processedMemberIds.push(userLvl.userId);
+
 				const member = await guild.members.cache.get(noSavedTime.userId);
 
 				if (!member || !member.voice.channel) continue;
 
-				await setLatestJoinTime(redis, guild.id, noSavedTime.userId);
+				await createUserHistory(db, {
+					guildId: guild.id,
+					userId: member.id,
+					joinedTime: new Date(),
+				});
 			}
 		});
 	}
-	await redis.quit();
 }

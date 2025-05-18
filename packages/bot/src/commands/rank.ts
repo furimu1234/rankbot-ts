@@ -1,5 +1,11 @@
-import { createUserLvl, getUserLvl, updateUserLvl } from '@rankbot/db';
-import { getLatestJoinTime, setLatestJoinTime } from '@rankbot/redis';
+import {
+	createUserHistory,
+	createUserLvl,
+	getUserHistory,
+	getUserLvl,
+	updateUserHistory,
+	updateUserLvl,
+} from '@rankbot/db';
 import {
 	ApplicationIntegrationType,
 	EmbedBuilder,
@@ -8,6 +14,7 @@ import {
 	SlashCommandBuilder,
 } from 'discord.js';
 import { container } from '../container';
+import { vcLvlUp } from '../utils';
 import { updateRewards } from '../utils/rankRewards';
 
 export const data = new SlashCommandBuilder()
@@ -28,7 +35,6 @@ export async function execute(interaction: Interaction) {
 	const guild = member.guild;
 	const guildId = interaction.guildId;
 	const store = container.current.getDataStore();
-	const redis = container.current.getRedisClient(true);
 
 	const userLvl = await store.do(async (db) => {
 		if (!container.current) return;
@@ -46,28 +52,41 @@ export async function execute(interaction: Interaction) {
 		const memberVoiceJoinned = member.voice.channel;
 
 		if (memberVoiceJoinned) {
-			const lvlCalc = container.current.lvlCalc(userLvl);
+			userLvl = await vcLvlUp(db, container.current.lvlCalc, guild, member);
+			const userHistory = await getUserHistory(db, member.id, guildId);
 
-			const { vcexp, vclvl } = lvlCalc.vc(
-				new Date(),
-				await getLatestJoinTime(redis, guildId, interaction.user.id),
-			);
+			if (userLvl && userHistory) {
+				await updateUserLvl(db, userLvl);
+				userHistory.removeTime = new Date();
+				userHistory.resultSeconds = userLvl.vcTotalConnectSeconds;
+				await updateUserHistory(db, userHistory);
+			}
 
-			userLvl.vcexp = vcexp || 0;
-			userLvl.vclvl = vclvl || 0;
-
-			await updateUserLvl(db, userLvl);
-			await setLatestJoinTime(redis, guildId, interaction.user.id);
+			await createUserHistory(db, {
+				guildId: guildId,
+				userId: member.id,
+				joinedTime: new Date(),
+			});
 		}
 
 		return userLvl;
 	});
 
 	if (userLvl !== undefined) {
-		updateRewards(store, guild, member, userLvl.vclvl, true);
+		updateRewards(
+			store,
+			guild,
+			member,
+			container.current
+				.lvlCalc({
+					connectSeconds: userLvl.vcTotalConnectSeconds,
+					mexp: userLvl.mexp,
+					mlvl: userLvl.mlvl,
+				})
+				.vc().lvl,
+			true,
+		);
 	}
-
-	await redis.quit();
 
 	if (!userLvl) {
 		const embed = new EmbedBuilder().setDescription(
@@ -76,13 +95,20 @@ export async function execute(interaction: Interaction) {
 		await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 		return;
 	}
-	const lvlCalc = container.current.lvlCalc(userLvl);
+	const lvlCalc = container.current.lvlCalc({
+		connectSeconds: userLvl.vcTotalConnectSeconds,
+		mexp: userLvl.mexp,
+		mlvl: userLvl.mlvl,
+	});
 
-	const vclvlStr = `${userLvl.vcexp} / ${lvlCalc.getlevelMultiplier(userLvl.vclvl)}`;
+	const userVcLvl = lvlCalc.vc();
+	console.log(userVcLvl);
+
+	const vclvlStr = `${userVcLvl.needExp} / ${lvlCalc.getlevelMultiplier(userVcLvl.lvl)}`;
 	const tclvlStr = `${userLvl.mexp} / ${lvlCalc.getlevelMultiplier(userLvl.mlvl)}`;
 
-	let description = `# VCレベル: ${userLvl.vclvl}\n`;
-	description += `${vclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userLvl.vclvl, userLvl.vcexp) * 10}秒接続\n\n`;
+	let description = `# VCレベル: ${userVcLvl.lvl}\n`;
+	description += `${vclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userVcLvl.lvl, userVcLvl.needExp) * 10}秒接続\n\n`;
 
 	description += `# TCレベル: ${userLvl.mlvl}\n`;
 	description += `${tclvlStr}\n-# ${lvlCalc.getTotalRequiredExp(userLvl.mlvl, userLvl.mexp)}回送信\n\n`;

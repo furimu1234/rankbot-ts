@@ -1,25 +1,22 @@
 import {
 	type SchemaDB,
 	createUserLvl,
+	getUserHistory,
 	getUserLvl,
 	updateUserLvl,
 } from '@rankbot/db';
-import {
-	type RedisClient,
-	delLatestJoinTime,
-	getLatestJoinTime,
-} from '@rankbot/redis';
 import type { Guild, GuildMember } from 'discord.js';
 import type { Container } from '../../types';
 
 export async function vcLvlUp(
 	db: SchemaDB,
-	redis: RedisClient,
 	lvlCalc: Container['lvlCalc'],
 	guild: Guild,
 	member: GuildMember,
 ) {
-	const lastJoinTime = await getLatestJoinTime(redis, guild.id, member.id);
+	const lastJoinTimeData = await getUserHistory(db, member.id, guild.id);
+
+	if (!lastJoinTimeData) return;
 
 	let userLvl = await getUserLvl(db, member.id, guild.id);
 
@@ -30,17 +27,17 @@ export async function vcLvlUp(
 		});
 	}
 
-	if (lastJoinTime) {
-		//レベル計算
-		const { vcexp, vclvl } = lvlCalc(userLvl).vc(new Date(), lastJoinTime);
+	//レベル計算
 
-		userLvl.vcexp = vcexp || 0;
-		userLvl.vclvl = vclvl || 0;
+	const oldConnectSeconds = Number.parseInt(userLvl.vcTotalConnectSeconds);
 
-		await updateUserLvl(db, userLvl);
-	}
+	const resultSeconds = Math.round(
+		(new Date().getTime() - lastJoinTimeData.joinedTime.getTime()) / 10 / 1000,
+	);
+	userLvl.vcTotalConnectSeconds = (
+		oldConnectSeconds + resultSeconds
+	).toString();
 
-	await delLatestJoinTime(redis, guild.id, member.id);
-
+	await updateUserLvl(db, userLvl);
 	return userLvl;
 }

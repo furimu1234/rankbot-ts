@@ -1,4 +1,8 @@
-import { setLatestJoinTime } from '@rankbot/redis';
+import {
+	createUserHistory,
+	getUserHistory,
+	updateUserHistory,
+} from '@rankbot/db';
 import { Events, type VoiceState } from 'discord.js';
 import { container } from '../../container';
 import { isLvlUpBlock, vcLvlUp } from '../../utils';
@@ -28,17 +32,31 @@ export async function execute(
 
 		//退出処理
 		const userLvl = await store.do(async (db) => {
-			const userLvl = await vcLvlUp(
-				db,
-				redis,
-				lvlCalc,
-				before.guild,
-				beforeMember,
-			);
-			return userLvl.vclvl;
+			const userLvl = await vcLvlUp(db, lvlCalc, before.guild, beforeMember);
+			const userHistory = await getUserHistory(db, beforeMember.id, guildId);
+
+			if (userHistory && userLvl) {
+				userHistory.removeTime = new Date();
+				userHistory.resultSeconds = userLvl.vcTotalConnectSeconds;
+				await updateUserHistory(db, userHistory);
+			}
+
+			return userLvl;
 		});
 
-		updateRewards(store, guild, beforeMember, userLvl, true);
+		if (userLvl) {
+			updateRewards(
+				store,
+				guild,
+				beforeMember,
+				lvlCalc({
+					connectSeconds: userLvl.vcTotalConnectSeconds,
+					mexp: userLvl.mexp,
+					mlvl: userLvl.mlvl,
+				}).vc().lvl,
+				true,
+			);
+		}
 
 		const guildId = afterMember.guild.id;
 
@@ -57,8 +75,14 @@ export async function execute(
 		}
 
 		//移動
-		console.log('SET LATEST JOIN TIME');
-		await setLatestJoinTime(redis, before.guild.id, afterMember.id);
+
+		await filter.store.do(async (db) => {
+			await createUserHistory(db, {
+				guildId: afterMember.guild.id,
+				userId: afterMember.id,
+				joinedTime: new Date(),
+			});
+		});
 	}
 	//入室
 	else if (after.channel && !before.channel && after.member) {
@@ -79,7 +103,13 @@ export async function execute(
 			return;
 		}
 
-		await setLatestJoinTime(redis, after.guild.id, afterMember.id);
+		await filter.store.do(async (db) => {
+			await createUserHistory(db, {
+				guildId: afterMember.guild.id,
+				userId: afterMember.id,
+				joinedTime: new Date(),
+			});
+		});
 	}
 
 	//退出
@@ -88,19 +118,30 @@ export async function execute(
 		const guild = before.guild;
 
 		const userLvl = await store.do(async (db) => {
-			const userLvl = await vcLvlUp(
-				db,
-				redis,
-				lvlCalc,
-				before.guild,
-				beforeMember,
-			);
-			return userLvl.vclvl;
+			const userLvl = await vcLvlUp(db, lvlCalc, before.guild, beforeMember);
+			const userHistory = await getUserHistory(db, beforeMember.id, guild.id);
+
+			if (userHistory && userLvl) {
+				userHistory.removeTime = new Date();
+				userHistory.resultSeconds = userLvl.vcTotalConnectSeconds;
+				await updateUserHistory(db, userHistory);
+			}
+			return userLvl;
 		});
 
-		if (userLvl === undefined) return;
-
-		updateRewards(store, guild, beforeMember, userLvl, true);
+		if (userLvl) {
+			updateRewards(
+				store,
+				guild,
+				beforeMember,
+				lvlCalc({
+					connectSeconds: userLvl.vcTotalConnectSeconds,
+					mexp: userLvl.mexp,
+					mlvl: userLvl.mlvl,
+				}).vc().lvl,
+				true,
+			);
+		}
 	}
 
 	await redis.quit();
