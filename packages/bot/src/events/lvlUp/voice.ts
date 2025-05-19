@@ -33,7 +33,7 @@ export async function execute(
 		//退出処理
 		const userLvl = await store.do(async (db) => {
 			const userLvl = await vcLvlUp(db, lvlCalc, before.guild, beforeMember);
-			const userHistory = await getUserHistory(db, beforeMember.id, guildId);
+			const userHistory = await getUserHistory(db, beforeMember.id, guild.id);
 
 			if (userHistory && userLvl) {
 				userHistory.removeTime = new Date();
