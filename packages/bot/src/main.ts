@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadCommands } from './commands/main';
 import { setLastRunningTime } from './intervals';
+import { sendGraph } from './intervals/sendGraph';
 import { loadEvents } from './loadEvents';
 import { initExp } from './utils';
 
@@ -26,10 +27,12 @@ const __filename = fileURLToPath(import.meta.url);
 await loadEvents(client, path.resolve(path.dirname(__filename), './events'));
 
 //動作確認時刻保存
+
 setLastRunningTime(container);
 
 client.once(Events.ClientReady, async () => {
 	container.current = Container();
+	sendGraph(client, container);
 	logger = container.current.logger;
 
 	if (client.user) {

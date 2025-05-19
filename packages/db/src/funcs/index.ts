@@ -1,5 +1,6 @@
 //レベル
 export * from './getUserLvl';
+export * from './getUserLvls';
 export * from './createUserLvl';
 export * from './updateUserLvl';
 
